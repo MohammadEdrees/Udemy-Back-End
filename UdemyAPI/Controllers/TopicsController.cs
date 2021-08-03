@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Collections.Generic;
@@ -68,8 +68,5 @@ namespace UdemyAPI.Controllers
             }
             return BadRequest("Error In Delete ");
         }
-
-
-
     }
 }

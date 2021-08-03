@@ -3,6 +3,7 @@ using System.Collections.Generic;
 
 #nullable disable
 
+
 namespace UdemyAPI.Models
 {
     public partial class InstCr
@@ -14,5 +15,6 @@ namespace UdemyAPI.Models
         public virtual Instructor Instructor { get; set; }
 
         public virtual Course Course { get; set; }
+
     }
 }

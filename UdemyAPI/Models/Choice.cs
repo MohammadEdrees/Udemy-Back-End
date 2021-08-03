@@ -3,7 +3,9 @@ using System.Collections.Generic;
 
 #nullable disable
 
+
 namespace UdemyAPI.Models
+
 {
     public partial class Choice
     {

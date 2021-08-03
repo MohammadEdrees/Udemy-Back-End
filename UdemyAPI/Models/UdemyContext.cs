@@ -1,4 +1,5 @@
 ﻿using System;
+
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
@@ -10,6 +11,7 @@ using UdemyAPI.Authentication;
 namespace UdemyAPI.Models
 {
     public partial class UdemyContext : IdentityDbContext<ApplicationUser,IdentityRole,string>
+
     {
         public UdemyContext()
         {
@@ -26,29 +28,34 @@ namespace UdemyAPI.Models
         public virtual DbSet<Choice> Choices { get; set; }
         public virtual DbSet<Course> Courses { get; set; }
         public virtual DbSet<Exam> Exams { get; set; }
+
         //public virtual DbSet<InstCr> InstCrs { get; set; }
+
         public virtual DbSet<Instructor> Instructors { get; set; }
         public virtual DbSet<Question> Questions { get; set; }
         public virtual DbSet<StdCr> StdCrs { get; set; }
         public virtual DbSet<StdExam> StdExams { get; set; }
         public virtual DbSet<Student> Students { get; set; }
         public virtual DbSet<Topic> Topics { get; set; }
+
         public virtual DbSet<Lecture> Lectures { get; set; }
         public virtual DbSet<SupCateg> SupCategs { get; set; }
 
         public virtual DbSet<CourseSection> CourseSections { get; set; }
         public virtual DbSet<CourseInCard> CourseInCards { get; set; }
 
+
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
             if (!optionsBuilder.IsConfigured)
-            {
+ {
                 optionsBuilder.UseSqlServer("Server=.;Database=Udemy;Trusted_Connection=True;");
             }
         }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
+
             base.OnModelCreating(modelBuilder);
                     
             modelBuilder.HasAnnotation("Relational:Collation", "SQL_Latin1_General_CP1_CI_AS");
@@ -67,6 +74,7 @@ namespace UdemyAPI.Models
                 //ent.HasMany(e => e.Topics).WithOne(e => e.supCateg);
 
             });
+
 
             modelBuilder.Entity<Admin>(entity =>
             {
@@ -114,7 +122,7 @@ namespace UdemyAPI.Models
                     .IsRequired()
                     .HasMaxLength(50)
                     .HasColumnName("Category_Name");
-                
+
             });
 
             modelBuilder.Entity<Choice>(entity =>
@@ -142,6 +150,7 @@ namespace UdemyAPI.Models
 
                 entity.Property(e => e.Duration).HasMaxLength(50);
 
+
                 entity.Property(e => e.Title)
                     .IsRequired()
                     .HasMaxLength(50)
@@ -157,6 +166,7 @@ namespace UdemyAPI.Models
 
                 entity.HasMany(obj => obj.CourseSections)
                 .WithOne(obj => obj.Course).HasForeignKey(obj => obj.CrsId).IsRequired();
+
 
             });
 
@@ -174,6 +184,7 @@ namespace UdemyAPI.Models
                     .HasMaxLength(50)
                     .HasColumnName("Exam_Name");
             });
+
 
             //modelBuilder.Entity<InstCr>(entity =>
             //{
@@ -194,6 +205,7 @@ namespace UdemyAPI.Models
                 entity.HasKey(e => new { e.CId, e.CrsId });
                 
 
+
             });
 
             modelBuilder.Entity<Instructor>(entity =>
@@ -205,6 +217,7 @@ namespace UdemyAPI.Models
                 entity.Property(e => e.InstId).HasColumnName("Inst_Id");
 
                 entity.Property(e => e.Address).HasMaxLength(50);
+
 
                 entity.Property(e => e.Biography).HasMaxLength(50);
 
@@ -220,6 +233,7 @@ namespace UdemyAPI.Models
 
                 entity.Property(e => e.Lname).HasMaxLength(50);
 
+
                 entity.Property(e => e.Mail).IsRequired();
 
                 entity.Property(e => e.Password)
@@ -228,7 +242,9 @@ namespace UdemyAPI.Models
 
                 entity.Property(e => e.Phone).HasMaxLength(50);
 
+
                 entity.HasMany(obj => obj.courses).WithOne(obj => obj.Instructor).HasForeignKey(obj=>obj.InstId).IsRequired();
+
             });
 
             modelBuilder.Entity<Question>(entity =>
@@ -264,6 +280,7 @@ namespace UdemyAPI.Models
                 entity.Property(e => e.Certificate).HasMaxLength(50);
                 entity.HasOne(obj => obj.Student).WithMany(obj => obj.StudentCourses);
                 entity.HasOne(obj => obj.Course).WithMany(obj => obj.studentCourses);
+
             });
 
             modelBuilder.Entity<StdExam>(entity =>
@@ -290,7 +307,9 @@ namespace UdemyAPI.Models
 
                 entity.ToTable("Student");
 
+
                 entity.Property(e => e.StdId).HasColumnName("Std_Id");
+
 
                 entity.Property(e => e.Fname)
                     .IsRequired()
@@ -324,11 +343,14 @@ namespace UdemyAPI.Models
 
                 entity.Property(e => e.TopId).HasColumnName("Top_Id");
 
+
                 entity.Property(e => e.SupCatId).HasColumnName("SupCat_Id");
+
 
                 entity.Property(e => e.TopName)
                     .HasMaxLength(50)
                     .HasColumnName("Top_Name");
+
                 entity.HasOne(obj => obj.supCateg).WithMany(obj => obj.Topics).HasForeignKey(obj => obj.SupCatId);
 
             });
@@ -343,11 +365,13 @@ namespace UdemyAPI.Models
 
                 //entity.Property(e => e.SectionId).HasColumnName("Crs_Id");
 
+
                 entity.Property(e => e.Description).HasMaxLength(50);
 
                 entity.Property(e => e.Title)
                     .IsRequired()
                     .HasMaxLength(50);
+
                 entity.HasOne(obj => obj.CourseSection).WithMany(obj => obj.CourseLecture).HasForeignKey(e => e.SectionId).IsRequired();
 
             });
@@ -356,6 +380,7 @@ namespace UdemyAPI.Models
             OnModelCreatingPartial(modelBuilder);
         }
        
+
 
         partial void OnModelCreatingPartial(ModelBuilder modelBuilder);
     }

@@ -24,8 +24,10 @@ namespace UdemyAPI
 {
     public class Startup
     {
+
         //cors
         private readonly string enableCors = "cors";
+
         public Startup(IConfiguration configuration)
         {
             Configuration = configuration;
@@ -38,6 +40,18 @@ namespace UdemyAPI
         {
            // services.Configure<JwtConfig>(Configuration.GetSection("JwtConfig"));
 
+            services.AddDbContext<UdemyContext>
+            (option => option.UseSqlServer(Configuration.GetConnectionString("con")));
+
+            services.AddCors(c =>
+            {
+                c.AddPolicy(xCors, p =>
+                {
+                    p.AllowAnyOrigin();
+                    p.AllowAnyMethod();
+                    p.AllowAnyHeader();
+                });
+            });
             services.AddControllers();
             services.AddControllers().AddNewtonsoftJson(options =>
             //Looping Ignore
@@ -83,6 +97,7 @@ namespace UdemyAPI
                 
             });
 
+
             //Identity
             services.AddIdentity<ApplicationUser, IdentityRole>()
                 .AddEntityFrameworkStores<UdemyContext>()
@@ -122,6 +137,7 @@ namespace UdemyAPI
                 o.MultipartBodyLengthLimit = int.MaxValue;
                 o.MemoryBufferThreshold = int.MaxValue;
             });
+
             
         }
 
@@ -139,6 +155,7 @@ namespace UdemyAPI
             app.UseRouting();
             app.UseCors(enableCors);
             app.UseAuthentication();
+
             app.UseAuthorization();
 
             app.UseEndpoints(endpoints =>

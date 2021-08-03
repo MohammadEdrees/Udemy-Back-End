@@ -1,4 +1,4 @@
-﻿using BrunoZell.ModelBinding;
+using BrunoZell.ModelBinding;
 using Firebase.Auth;
 using Firebase.Storage;
 using Microsoft.AspNetCore.Hosting;

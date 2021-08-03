@@ -1,10 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
+
 using System.ComponentModel.DataAnnotations.Schema;
 
 #nullable disable
 
 namespace UdemyAPI.Models
+
 {
     public partial class Topic
     {
@@ -19,5 +21,6 @@ namespace UdemyAPI.Models
         public virtual SupCateg supCateg { set; get; }
         public virtual ICollection<Course> Courses { get; set; }
         public string TopImg { set; get; }
+
     }
 }

@@ -1,4 +1,4 @@
-﻿    using System;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
@@ -65,5 +65,6 @@ namespace UdemyAPI.Models
 
         public virtual ICollection<Course> courses { set; get; }
         //public virtual ICollection<InstCr> InstCrs { set; get; }
+
     }
 }

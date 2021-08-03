@@ -1,3 +1,4 @@
+
 ﻿using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
 using System;
@@ -44,5 +45,6 @@ namespace UdemyAPI.Models
 
 
         
+
     }
 }
