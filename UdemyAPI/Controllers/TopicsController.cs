@@ -1,107 +1,72 @@
-﻿using System;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using UdemyAPI;
+using UdemyAPI.Models;
+using UdemyAPI.Services;
 
 namespace UdemyAPI.Controllers
 {
-    [Route("api/[controller]")]
+    [Route("api/[controller]/[Action]")]
     [ApiController]
     public class TopicsController : ControllerBase
     {
-        private readonly UdemyContext _context;
+        IDB _db;
 
-        public TopicsController(UdemyContext context)
+        public TopicsController(IDB db)
         {
-            _context = context;
+            _db = db;
         }
 
-        // GET: api/Topics
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<Topic>>> GetTopics()
+        public ActionResult<IEnumerable<Topic>>GetAllTopics()
         {
-            return await _context.Topics.ToListAsync();
+            if (_db.GetAllTopics().Count > 0) return _db.GetAllTopics();
+            else return NotFound();
         }
-
-        // GET: api/Topics/5
-        [HttpGet("{id}")]
-        public async Task<ActionResult<Topic>> GetTopic(int id)
+        
+        [HttpGet]
+        public ActionResult<IEnumerable<Topic>>GetTopicsBySupCatId(int supCatId)
         {
-            var topic = await _context.Topics.FindAsync(id);
-
-            if (topic == null)
+           List<Topic>Foundtopics = _db.GetTopicsBySupCategId(supCatId);
+            if (Foundtopics.Count>0)
             {
-                return NotFound();
+                return Foundtopics;
             }
-
-            return topic;
-        }
-
-        // PUT: api/Topics/5
-        // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
-        [HttpPut("{id}")]
-        public async Task<IActionResult> PutTopic(int id, Topic topic)
-        {
-            if (id != topic.TopId)
+            else
             {
                 return BadRequest();
             }
-
-            _context.Entry(topic).State = EntityState.Modified;
-
-            try
-            {
-                await _context.SaveChangesAsync();
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                if (!TopicExists(id))
-                {
-                    return NotFound();
-                }
-                else
-                {
-                    throw;
-                }
-            }
-
-            return NoContent();
+        }
+        [HttpGet]
+        public IActionResult GetTopicsInCategory(int id)
+        {
+            return Ok(_db.GetTopicsInCategory(id));
         }
 
-        // POST: api/Topics
-        // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
-        [HttpPost]
-        public async Task<ActionResult<Topic>> PostTopic(Topic topic)
+        [HttpGet]
+        public IActionResult GetTopicByTopicId(int Topicd)
         {
-            _context.Topics.Add(topic);
-            await _context.SaveChangesAsync();
+            Topic topic = _db.GetTopicByTopicId(Topicd);
+                if (topic != null)
+                    return Ok(topic);
 
-            return CreatedAtAction("GetTopic", new { id = topic.TopId }, topic);
+            return BadRequest("Topic Id Is Wrong ");
+            
         }
 
-        // DELETE: api/Topics/5
-        [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteTopic(int id)
+        [HttpDelete]
+        public IActionResult DeleteStudentByHisId(int id)
         {
-            var topic = await _context.Topics.FindAsync(id);
-            if (topic == null)
+            if (id > 0)
             {
-                return NotFound();
+                Student student = _db.GetStudentById(id);
+                if(student!=null)
+                return Ok(_db.DeleteStudent(student));
             }
-
-            _context.Topics.Remove(topic);
-            await _context.SaveChangesAsync();
-
-            return NoContent();
-        }
-
-        private bool TopicExists(int id)
-        {
-            return _context.Topics.Any(e => e.TopId == id);
+            return BadRequest("Error In Delete ");
         }
     }
 }

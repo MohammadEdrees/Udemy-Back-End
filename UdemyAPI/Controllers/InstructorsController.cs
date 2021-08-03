@@ -1,107 +1,148 @@
-﻿using System;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using UdemyAPI;
+using UdemyAPI.Services;
+using UdemyAPI.Models;
+using UdemyAPI.Authentication;
+
 
 namespace UdemyAPI.Controllers
 {
-    [Route("api/[controller]")]
+    [Route("api/[controller]/[Action]")]
     [ApiController]
     public class InstructorsController : ControllerBase
     {
-        private readonly UdemyContext _context;
+        IDB _db;
 
-        public InstructorsController(UdemyContext context)
+        public InstructorsController(IDB db)
         {
-            _context = context;
+            _db = db;
+
         }
 
-        // GET: api/Instructors
+        //GetInstructors
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<Instructor>>> GetInstructors()
+        public ActionResult<IEnumerable<Instructor>> GetAllInstructors()
         {
-            return await _context.Instructors.ToListAsync();
-        }
-
-        // GET: api/Instructors/5
-        [HttpGet("{id}")]
-        public async Task<ActionResult<Instructor>> GetInstructor(int id)
-        {
-            var instructor = await _context.Instructors.FindAsync(id);
-
-            if (instructor == null)
+            if (_db.GetAllInstructors().Count > 0)
             {
+                return (_db.GetAllInstructors());
+
+            }
+            else {
                 return NotFound();
             }
 
-            return instructor;
+        }
+        [HttpPost]
+        public ActionResult InstructorRegistration(Instructor ins)
+        {
+            //if mail exists error
+            //getInstructorby Mail
+            if (ins == null)
+                return BadRequest();
+            //GeInsBy mail 
+            if (_db.GetInstructorByMail(ins.Mail) != null || _db.GetStudentByMail(ins.Mail) != null)
+                return BadRequest("Mail is Exists Try another one ");//400
+
+            if (ModelState.IsValid)
+            {
+
+                return Ok(_db.AddInstructor(ins));
+            }
+            else {
+                return BadRequest("Values Are not ok");
+            }
+
         }
 
-        // PUT: api/Instructors/5
-        // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
-        [HttpPut("{id}")]
-        public async Task<IActionResult> PutInstructor(int id, Instructor instructor)
-        {
-            if (id != instructor.InstId)
-            {
-                return BadRequest();
-            }
-
-            _context.Entry(instructor).State = EntityState.Modified;
-
-            try
-            {
-                await _context.SaveChangesAsync();
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                if (!InstructorExists(id))
+        [HttpGet]
+        public ActionResult<Instructor> GetInstructorById(int id) {
+            if (id > 0) {
+                Instructor FoundInstructor = _db.GetInstructorById(id);
+                if (FoundInstructor != null)
                 {
-                    return NotFound();
+                    return FoundInstructor;
                 }
                 else
                 {
-                    throw;
+                    return NotFound();
                 }
             }
-
-            return NoContent();
-        }
-
-        // POST: api/Instructors
-        // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
-        [HttpPost]
-        public async Task<ActionResult<Instructor>> PostInstructor(Instructor instructor)
-        {
-            _context.Instructors.Add(instructor);
-            await _context.SaveChangesAsync();
-
-            return CreatedAtAction("GetInstructor", new { id = instructor.InstId }, instructor);
-        }
-
-        // DELETE: api/Instructors/5
-        [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteInstructor(int id)
-        {
-            var instructor = await _context.Instructors.FindAsync(id);
-            if (instructor == null)
+            else
             {
-                return NotFound();
+                return BadRequest();
+            }
+        }
+
+        [HttpPost("{id}"), DisableRequestSizeLimit]
+        public async Task<IActionResult> InsttImg(IFormFile file, int id)
+        {
+            var result = await _db.UploadInstructorImg(file, id);
+            return Ok(result);
+
+        }
+
+        [HttpGet]
+        public IActionResult GetInstructorsInCategory(int id)
+        {
+            return Ok(_db.GetInstructorsInCategory(id));
+        }
+
+        [HttpGet]
+        public IActionResult GetInstructorsInSubCategory(int subCatId)
+        {
+            return Ok(_db.GetInstructorsInSubCategory(subCatId));
+        }
+
+        [HttpGet]
+        public IActionResult GetInstructorsInTopic(int topId)
+        {
+            return Ok(_db.GetInstructorsInTopic(topId));
+        }
+
+        [HttpPut]
+        public IActionResult EditInstructor(int id, Instructor ins)
+        {
+            Instructor OldIns = _db.GetInstructorById(id);
+            if (OldIns == null)
+                return NotFound($"Instructor Not Found you id is {id}");
+
+            if (OldIns.InstId != ins.InstId)
+                return BadRequest($"OldID is{OldIns.InstId}:NEWID is {OldIns.InstId}");
+            else
+            {
+                Instructor EditedIns = _db.EditInstructor(OldIns, ins);
+                return Ok(EditedIns);
+
             }
 
-            _context.Instructors.Remove(instructor);
-            await _context.SaveChangesAsync();
-
-            return NoContent();
         }
 
-        private bool InstructorExists(int id)
+        [HttpGet]
+        public ActionResult<Instructor> GetStudnetNumbersWithInst(int id)
         {
-            return _context.Instructors.Any(e => e.InstId == id);
+            if (id > 0)
+            {
+                int NumberOfStudents = _db.GetStudnetNumbersWithInst(id);
+                if (NumberOfStudents != 0)
+                {
+                    return Ok(NumberOfStudents);
+                }
+                else
+                {
+                    return NotFound();
+                }
+            }
+            else
+            {
+                return BadRequest();
+            }
         }
+
     }
+
 }

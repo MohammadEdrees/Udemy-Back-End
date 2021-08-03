@@ -1,107 +1,166 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+using BrunoZell.ModelBinding;
+using Firebase.Auth;
+using Firebase.Storage;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using UdemyAPI;
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Net.Http.Headers;
+using System.Threading;
+using System.Threading.Tasks;
+using UdemyAPI.Models;
+using UdemyAPI.Services;
+
 
 namespace UdemyAPI.Controllers
 {
-    [Route("api/[controller]")]
+    [Route("api/[controller]/[Action]")]
     [ApiController]
     public class StudentsController : ControllerBase
     {
-        private  UdemyContext _context;
-
-        public StudentsController(UdemyContext context)
+        IDB _db;
+        IWebHostEnvironment hostingEnvironment;
+        public StudentsController(IDB db, IWebHostEnvironment _hostingEnvironment)
         {
-            _context = context;
+            _db = db;
+            hostingEnvironment = _hostingEnvironment;
         }
-
-        // GET: api/Students
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<Student>>> GetStudents()
+        public IActionResult GetStudents()
         {
-            return await _context.Students.ToListAsync();
+            if (_db.GetAllStudents().Count > 0)
+                return Ok(_db.GetAllStudents());
+            return BadRequest(" There is no students yet ");
+
         }
 
-        // GET: api/Students/5
-        [HttpGet("{id}")]
-        public async Task<ActionResult<Student>> GetStudent(int id)
+        [HttpGet]
+        public IActionResult GetStudentById(int StdId)
         {
-            var student = await _context.Students.FindAsync(id);
-
+            Student student = _db.GetStudentById(StdId);
             if (student == null)
-            {
-                return NotFound();
-            }
+                return BadRequest("Not Exist");
 
-            return student;
+            return Ok(student);
         }
 
-        // PUT: api/Students/5
-        // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
-        [HttpPut("{id}")]
-        public async Task<IActionResult> PutStudent(int id, Student student)
+        [HttpPost, DisableRequestSizeLimit]
+        [RequestFormLimits(MultipartBodyLengthLimit = 204857600)]
+        public IActionResult StudentRegistration( Student s)
         {
-            if (id != student.StdId)
+            if (s == null)
+                return BadRequest("Check Student data please");
+
+            if (_db.GetStudentByMail(s.Mail) != null || _db.GetInstructorByMail(s.Mail) != null)
+                return BadRequest("Mail is Exists Try another one");
+
+            if (ModelState.IsValid)
+
             {
-                return BadRequest();
+                Student Std = _db.AddStudent(s);
+                return Ok(Std);
+            }
+            else
+            {
+                return BadRequest("Values Are not ok");
+
             }
 
-            _context.Entry(student).State = EntityState.Modified;
-
-            try
+        }
+        [HttpDelete]
+        public IActionResult Remove(int id)
+        {
+            Student foundStd = _db.GetStudentById(id);
+            if (foundStd != null)
             {
-                await _context.SaveChangesAsync();
+                _db.RemoveStudent(foundStd);
+                return Ok("Deleted Successful");
             }
-            catch (DbUpdateConcurrencyException)
+            else
             {
-                if (!StudentExists(id))
-                {
-                    return NotFound();
-                }
+
+                return BadRequest("Invalid Id");
+            }
+        }
+        [HttpPut("{id}")]
+        public IActionResult EditStudent(int id, Student newS)
+        {
+            //DataBinding ["","",""]
+            //Images
+
+            if (id > 0)
+            {
+                Student OldStd = _db.GetStudentById(id);
+                if (OldStd == null)
+                    return NotFound($"Student Not Found you id is {id}");
+
+                if (OldStd.StdId != newS.StdId)
+                    return BadRequest($"OldID is{OldStd.StdId}:NEWID is {newS.StdId}");
                 else
                 {
-                    throw;
+                    Student EditedStd = _db.EditStudent(OldStd, newS);
+                    return Ok(EditedStd);
+
                 }
+
             }
-
-            return NoContent();
-        }
-
-        // POST: api/Students
-        // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
-        [HttpPost]
-        public async Task<ActionResult<Student>> PostStudent(Student student)
-        {
-            _context.Students.Add(student);
-            await _context.SaveChangesAsync();
-
-            return CreatedAtAction("GetStudent", new { id = student.StdId }, student);
-        }
-
-        // DELETE: api/Students/5
-        [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteStudent(int id)
-        {
-            var student = await _context.Students.FindAsync(id);
-            if (student == null)
+            else
             {
-                return NotFound();
+                return BadRequest("Some thing went wrong");
+            }
+        }
+
+        //[HttpPost("UploadFile")]
+        //public async Task<IActionResult> UploadFile( IFormFile file)
+        //{
+        //    string fName = file.FileName;
+        //    string path = Path.Combine(_environment.ContentRootPath, "Images/" + file.FileName);
+        //    using (var stream = new FileStream(path, FileMode.Create))
+        //    {
+        //        await file.CopyToAsync(stream);
+        //    }
+        //    return Ok(file.FileName);
+        //}
+
+        [HttpPost, DisableRequestSizeLimit]
+        [RequestFormLimits(MultipartBodyLengthLimit = 204857600)]
+        // public async Task<IActionResult> Upload(IFormFile _file)
+        public async Task<IActionResult> Upload()
+        {
+            string r = await _db.UploadImage(Request.Form.Files[0]);
+            return Ok(r);
+
+        }
+
+
+
+        [HttpPost("{id}"), DisableRequestSizeLimit]
+        public async Task<IActionResult>StudentImg( IFormFile file , int id)
+        {
+            var result = await _db.UploadStudentImg(file,id);
+            return Ok(result);
+
+        }
+
+        [HttpPost]
+        public IActionResult AddCourseEnrollment(int crsId, int stdId)
+        {
+            if(_db.GetStudentById(stdId) == null && _db.GetCourseById(crsId) == null)
+            {
+                NotFound("Check Your Data");
             }
 
-            _context.Students.Remove(student);
-            await _context.SaveChangesAsync();
+            else
+            {
+                Course EnrolledCourse = _db.AddCourseEnrollment(crsId, stdId);
+                return Ok(EnrolledCourse);
+            }
 
-            return NoContent();
+            return BadRequest();
         }
 
-        private bool StudentExists(int id)
-        {
-            return _context.Students.Any(e => e.StdId == id);
-        }
     }
 }

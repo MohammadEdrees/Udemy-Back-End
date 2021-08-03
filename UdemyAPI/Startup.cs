@@ -1,22 +1,33 @@
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using Microsoft.OpenApi.Models;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using System.Threading.Tasks;
+using UdemyAPI.Controllers;
+using UdemyAPI.Models;
+using UdemyAPI.Services;
+using Microsoft.IdentityModel.Tokens;
+using Microsoft.AspNetCore.Identity;
+using UdemyAPI.Authentication;
 
 namespace UdemyAPI
 {
     public class Startup
     {
-        string xCors = "SayHi";
+
+        //cors
+        private readonly string enableCors = "cors";
+
         public Startup(IConfiguration configuration)
         {
             Configuration = configuration;
@@ -24,9 +35,10 @@ namespace UdemyAPI
 
         public IConfiguration Configuration { get; }
 
-        // This method gets called by the runtime. Use this method to add services to the container.
+
         public void ConfigureServices(IServiceCollection services)
         {
+           // services.Configure<JwtConfig>(Configuration.GetSection("JwtConfig"));
 
             services.AddDbContext<UdemyContext>
             (option => option.UseSqlServer(Configuration.GetConnectionString("con")));
@@ -41,31 +53,118 @@ namespace UdemyAPI
                 });
             });
             services.AddControllers();
-            services.AddSwaggerGen(c =>
+            services.AddControllers().AddNewtonsoftJson(options =>
+            //Looping Ignore
+            options.SerializerSettings.ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore);
+
+            //Nsawg Not Swagger
+            services.AddSwaggerDocument();
+
+            //ConfirmJWt
+            services.AddAuthentication(o =>
             {
-                c.SwaggerDoc("v1", new OpenApiInfo { Title = "UdemyAPI", Version = "v1" });
+                o.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+                o.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
+                o.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+
+            })
+              .AddJwtBearer(jwt =>
+            {
+                var key = Encoding.ASCII.GetBytes(Configuration["JWT:Key"]);
+                jwt.SaveToken = true;
+                jwt.RequireHttpsMetadata = false;
+                jwt.TokenValidationParameters = new TokenValidationParameters
+                {
+                    ValidateIssuer = true,
+                    ValidateAudience = true,
+                    ValidateLifetime = true,
+                    ValidateIssuerSigningKey=true,
+
+                    ValidIssuer=Configuration["JWT:Issuer"],
+                    ValidAudience= Configuration["JWT:Audience"],
+                    IssuerSigningKey = new SymmetricSecurityKey
+                    (Encoding.UTF8.GetBytes(Configuration["JWT:Key"]))
+                   
+                };
             });
+
+
+            //DBContext
+            services.AddDbContext<UdemyContext>(options =>
+            {
+                options.UseLazyLoadingProxies()
+                .UseSqlServer(Configuration.GetConnectionString("con1"));
+                
+            });
+
+
+            //Identity
+            services.AddIdentity<ApplicationUser, IdentityRole>()
+                .AddEntityFrameworkStores<UdemyContext>()
+                .AddDefaultTokenProviders();
+
+            services.Configure<IdentityOptions>(op=> {
+                //No Duplication in Mail
+                op.User.RequireUniqueEmail = true;
+                //password  Change Later
+                op.Password.RequiredLength = 8;
+                op.Password.RequireDigit=false;
+                op.Password.RequireLowercase=false;
+                op.Password.RequireUppercase=false;
+                op.Password.RequireNonAlphanumeric=false;
+
+            });
+
+            //DI
+            services.AddTransient<IDB, DBService>();
+
+            //CORS
+            services.AddCors(c =>
+            {
+                //Allow All 
+                c.AddPolicy(enableCors, c => 
+                {
+                    c.AllowAnyOrigin();
+                    c.AllowAnyMethod();
+                    c.AllowAnyHeader();
+
+                });
+            });
+
+            //FilesOptions
+            services.Configure<FormOptions>(o => {
+                o.ValueLengthLimit = int.MaxValue;
+                o.MultipartBodyLengthLimit = int.MaxValue;
+                o.MemoryBufferThreshold = int.MaxValue;
+            });
+
             
         }
 
-        // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
+
+        //Middlewares
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
         {
             if (env.IsDevelopment())
             {
                 app.UseDeveloperExceptionPage();
-                app.UseSwagger();
-                app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "UdemyAPI v1"));
+                app.UseOpenApi();
+                app.UseSwaggerUi3();
             }
 
             app.UseRouting();
-            app.UseCors(xCors);
+            app.UseCors(enableCors);
+            app.UseAuthentication();
+
             app.UseAuthorization();
 
             app.UseEndpoints(endpoints =>
             {
                 endpoints.MapControllers();
             });
+            
+           
+            
         }
     }
 }

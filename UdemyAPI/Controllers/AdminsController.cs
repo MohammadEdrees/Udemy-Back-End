@@ -102,6 +102,7 @@ namespace UdemyAPI.Controllers
         private bool AdminExists(int id)
         {
             return _context.Admins.Any(e => e.AdminId == id);
+
         }
     }
 }

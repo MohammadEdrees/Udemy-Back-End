@@ -1,9 +1,6 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
-
-#nullable disable
-
-namespace UdemyAPI
+namespace UdemyAPI.Models
 {
     public partial class Admin
     {
