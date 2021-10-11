@@ -41,11 +41,11 @@ namespace UdemyAPI
            // services.Configure<JwtConfig>(Configuration.GetSection("JwtConfig"));
 
             services.AddDbContext<UdemyContext>
-            (option => option.UseSqlServer(Configuration.GetConnectionString("con")));
+            (option => option.UseSqlServer(Configuration.GetConnectionString("con1")));
 
             services.AddCors(c =>
             {
-                c.AddPolicy(xCors, p =>
+                c.AddPolicy(enableCors, p =>
                 {
                     p.AllowAnyOrigin();
                     p.AllowAnyMethod();
